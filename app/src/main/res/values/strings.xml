@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Zr audio player</string>
+
+    <string name="choose_file">اختر ملفًا صوتيًا</string>
+    <string name="no_file_loaded">لم يتم اختيار أي ملف بعد</string>
+    <string name="play">تشغيل</string>
+    <string name="pause">إيقاف مؤقت</string>
+    <string name="rewind_10">إرجاع 10 ثوانٍ</string>
+    <string name="forward_10">تقديم 10 ثوانٍ</string>
+    <string name="speed_label">سرعة التشغيل</string>
+    <string name="sleep_timer">مؤقت النوم</string>
+    <string name="sleep_timer_off">مؤقت النوم: متوقف</string>
+    <string name="sleep_timer_remaining">مؤقت النوم متبقٍ: %1$s</string>
+    <string name="choose_sleep_timer">اختر مدة مؤقت النوم</string>
+    <string name="cancel">إلغاء</string>
+    <string name="sleep_timer_option_off">إيقاف المؤقت</string>
+    <string name="current_position">الموضع الحالي</string>
+    <string name="seek_bar_description">شريط تقدم المقطع الصوتي</string>
+    <string name="now_playing_prefix">الملف الحالي: %1$s</string>
+</resources>
