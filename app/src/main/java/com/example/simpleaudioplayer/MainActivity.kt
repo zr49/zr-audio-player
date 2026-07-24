@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.provider.DocumentsContract
 import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import androidx.appcompat.app.AlertDialog
@@ -43,9 +44,38 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val openDocumentLauncher = registerForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        uri?.let { loadAudio(it, resumeFromSaved = true) }
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.data?.let { uri -> loadAudio(uri, resumeFromSaved = true) }
+        }
+    }
+
+    private fun launchFilePicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            // اقبل عدة أنواع صوت لتفادي إخفاء بعض الملفات بسبب اختلاف نوع mimeType
+            putExtra(
+                Intent.EXTRA_MIME_TYPES,
+                arrayOf(
+                    "audio/*",
+                    "application/ogg",
+                    "application/x-ogg",
+                    "application/x-flac"
+                )
+            )
+            // حاول فتح المتصفح مباشرة على التخزين الداخلي بدل تبويب "الأخيرة" الفارغ
+            try {
+                val initialUri = DocumentsContract.buildRootUri(
+                    "com.android.externalstorage.documents", "primary"
+                )
+                putExtra(DocumentsContract.EXTRA_INITIAL_URI, initialUri)
+            } catch (e: Exception) {
+                // تجاهل إن لم يدعمه الجهاز
+            }
+        }
+        openDocumentLauncher.launch(intent)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,7 +89,12 @@ class MainActivity : AppCompatActivity() {
         setupButtons()
         setupSeekBar()
 
-        // إعادة فتح آخر ملف تم تشغيله تلقائيًا إن وجد
+        // إذا تم فتح التطبيق من ملف صوتي مباشرة (عبر "فتح باستخدام")
+        if (handleIncomingIntent(intent)) {
+            return
+        }
+
+        // وإلا، أعد فتح آخر ملف تم تشغيله تلقائيًا إن وجد
         val lastUriString = prefs.getString(KEY_LAST_URI, null)
         if (lastUriString != null) {
             try {
@@ -69,6 +104,21 @@ class MainActivity : AppCompatActivity() {
                 // تجاهل إذا تعذر فتح الملف السابق (قد يكون محذوفًا)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingIntent(intent)
+    }
+
+    /** يتعامل مع فتح التطبيق مباشرة من ملف صوتي في تطبيق آخر (مدير ملفات، إلخ). يعيد true إذا تم فتح ملف. */
+    private fun handleIncomingIntent(intent: Intent?): Boolean {
+        if (intent?.action == Intent.ACTION_VIEW && intent.data != null) {
+            loadAudio(intent.data!!, resumeFromSaved = true)
+            return true
+        }
+        return false
     }
 
     private fun setupSpeedSpinner() {
@@ -98,7 +148,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupButtons() {
         binding.btnChooseFile.setOnClickListener {
-            openDocumentLauncher.launch(arrayOf("audio/*"))
+            launchFilePicker()
         }
 
         binding.btnPlayPause.setOnClickListener {
